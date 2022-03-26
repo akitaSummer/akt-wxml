@@ -162,7 +162,7 @@ impl Lexer {
             let char = self.peek_char()?;
             let next_char = self.peek_chars(1)?;
 
-            if char == '>' || (char == '/' && char == '>') {
+            if char == '>' || (char == '/' && next_char == '>') {
                 break;
             }
 
@@ -170,7 +170,7 @@ impl Lexer {
                 self.take_char()?;
             } else {
                 let name =
-                    self.take_char_while(|c| c != '=' || c != ' ' || c != '>' || c != '/')?;
+                    self.take_char_while(|c| c != '=' && c != ' ' && c != '>' && c != '/')?;
 
                 let no_value = self.peek_char()? != '=';
 
@@ -183,6 +183,7 @@ impl Lexer {
                     })
                 } else {
                     // name=""
+                    assert_eq!(self.take_char()?, '='); // 取出”=“
                     let quote = self.take_char()?;
                     let quote_type = if quote == '\"' { '\"' } else { '\'' };
                     let value = self.take_char_while(|c| c != quote_type)?;
@@ -201,14 +202,25 @@ impl Lexer {
 
     fn read_tag(&mut self) -> Result<Token, LexerError> {
         let loc = self.loc;
+        assert_eq!(self.take_char()?, '<');
 
         let close_start = self.peek_char()? == '/'; // </Text>
 
-        let name = self.take_char_while(|c| c != '/' || c != '>' || c != ' ')?;
+        if close_start {
+            assert_eq!(self.take_char()?, '/');
+        }
+
+        let name = self.take_char_while(|c| c != '/' && c != '>' && c != ' ')?;
 
         let attributes = self.read_attributes()?;
 
         let close_end = self.peek_char()? == '/'; // <Text/>
+
+        if close_end {
+            assert_eq!(self.take_char()?, '/');
+        }
+
+        assert_eq!(self.take_char()?, '>');
 
         if close_start {
             Ok(Token {
@@ -244,9 +256,9 @@ impl Lexer {
 
     pub fn tokenize(&mut self) -> Result<Token, LexerError> {
         let current = self.peek_char()?;
-
         match current {
             '\n' => {
+                assert_eq!(self.take_char()?, '\n');
                 // 换行
                 self.loc.line += 1;
                 self.loc.column = 0;
