@@ -6,7 +6,6 @@ mod utils;
 #[cfg(test)]
 mod tests {
     use crate::generator;
-    use crate::lexer;
     use crate::parser;
     #[test]
     fn it_works() {
@@ -26,7 +25,6 @@ mod tests {
                 let code = gen.generate_fre();
                 assert_eq!(code, "<>{list.map((item)=><View>hello {item}! {a?<Text>a</Text>:b?<Text>b</Text>:true?<Text/>:null}</View>)}</>".to_string());
             }
-            Err(lexer::LexerError::END) => {}
             Err(err) => {
                 panic!("{:?}", err);
             }
